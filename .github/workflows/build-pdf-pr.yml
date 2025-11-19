@@ -1,0 +1,39 @@
+name: Build PDF on PR
+
+on:
+  pull_request:
+    paths:
+      - "cv.tex"
+
+jobs:
+  build_latex:
+    runs-on: ubuntu-latest
+
+    permissions:
+      issues: write
+      pull-requests: write
+
+    steps:
+      - name: Set up Git repository
+        uses: actions/checkout@v4
+      - name: Compile LaTeX document
+        uses: xu-cheng/latex-action@v3
+        with:
+          root_file: cv.tex
+          latexmk_use_lualatex: true
+      - id: upload-pdf
+        name: Upload PDF file
+        uses: actions/upload-artifact@v4
+        with:
+          name: PDF
+          path: cv.pdf
+      - name: Comment on PR with PDF link
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            Your CV document is ready to download:
+
+            👉 [Download cv.pdf][1]
+
+            [1]: https://github.com/Kr4is/cv/actions/runs/${{ github.run_id }}/artifacts/${{ steps.upload-pdf.outputs.artifact-id }}
