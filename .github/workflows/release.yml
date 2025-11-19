@@ -1,0 +1,42 @@
+name: Release
+permissions: read-all
+
+on:
+  pull_request:
+    types: [closed]
+    branches: ["master"]
+  workflow_dispatch:
+
+jobs:
+  release:
+    name: Release
+    if: github.event.pull_request.merged == true && !contains(join(github.event.pull_request.labels.*.name, ', '), 'skip-release')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - id: git-tag
+        name: Create git tag
+        uses: Digital-Udvikling/actions-calver@v0.4.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compile LaTeX document
+        uses: xu-cheng/latex-action@v3
+        with:
+          root_file: cv.tex
+          latexmk_use_xelatex: true
+
+      - name: Rename PDF file
+        run: mv cv.pdf Bruno_Cabado_AI_Engineer.pdf
+
+      - name: Create GitHub Release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: Bruno_Cabado_AI_Engineer.pdf
+          tag: ${{ steps.git-tag.outputs.tag }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          generateReleaseNotes: true
